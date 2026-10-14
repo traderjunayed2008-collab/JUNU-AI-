@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JUNU AI V2.0 PRO</title>
+    <style>
+        :root {
+            --bg-main: #060812;
+            --card-bg: #0f1326;
+            --accent-purple: #7000ff;
+            --accent-cyan: #00f0ff;
+            --green: #00e676;
+            --red: #ff1744;
+            --yellow: #ffc400;
+            --text-main: #ffffff;
+            --text-sub: #828b9e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); display: flex; justify-content: center; padding: 15px; }
+
+        .app-container {
+            width: 100%; max-width: 420px; background: var(--card-bg);
+            border-radius: 20px; border: 1px solid rgba(112, 0, 255, 0.3);
+            padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 {
+            font-size: 22px; font-weight: 900;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .upload-box {
+            border: 2px dashed rgba(0, 240, 255, 0.4); border-radius: 14px;
+            padding: 20px; text-align: center; background: rgba(0,240,255,0.02);
+            cursor: pointer; margin-bottom: 15px;
+        }
+        .preview-img { max-width: 100%; max-height: 140px; border-radius: 8px; display: none; margin: 10px auto 0; }
+
+        .btn-action {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+            color: #fff; font-size: 15px; font-weight: 800; cursor: pointer;
+        }
+
+        .result-box {
+            display: none; margin-top: 15px; background: #161b36;
+            border-radius: 14px; padding: 15px; border: 1px solid rgba(0,240,255,0.2);
+        }
+        .pair-title { font-size: 16px; font-weight: 800; margin-bottom: 8px; text-align: center; color: var(--accent-cyan); }
+        .signal-title { font-size: 22px; font-weight: 900; text-align: center; margin: 10px 0; }
+        .signal-up { color: var(--green); }
+        .signal-down { color: var(--red); }
+        .signal-wait { color: var(--yellow); }
+
+        .reason-box {
+            background: #090c1a; border-radius: 8px; padding: 10px;
+            font-size: 11px; line-height: 1.4; color: var(--text-sub); margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header"><h1>JUNU AI V2.0 PRO</h1></div>
+
+    <div class="upload-box" onclick="triggerFileInput()">
+        <span id="uploadText">📷 Upload Chart Screenshot</span>
+        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="previewImage(event)">
+        <img id="imgPreview" class="preview-img">
+    </div>
+
+    <button class="btn-action" onclick="analyzeChart()">ANALYZE CHART</button>
+
+    <div id="resultBox" class="result-box">
+        <div class="pair-title" id="pairTitle">EUR/USD (OTC)</div>
+        <div class="signal-title" id="signalOutput">--</div>
+        <div style="font-size:12px; display:flex; justify-content:space-between; margin:10px 0;">
+            <span>Confidence Rate:</span><strong id="confVal" style="color:var(--accent-cyan);">0%</strong>
+        </div>
+        <div class="reason-box" id="reasonText">Scanning chart...</div>
+    </div>
+</div>
+
+<script>
+    let base64Image = null;
+    let mimeType = "image/png";
+
+    function triggerFileInput() {
+        document.getElementById('fileInput').click();
+    }
+
+    function previewImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            mimeType = file.type || "image/png";
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('imgPreview').src = e.target.result;
+                document.getElementById('imgPreview').style.display = 'block';
+                document.getElementById('uploadText').style.display = 'none';
+                base64Image = e.target.result.split(',')[1];
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    async function analyzeChart() {
+        if (!base64Image) {
+            alert("Doya kore chart-er screenshot upload korun!");
+            return;
+        }
+
+        const resBox = document.getElementById('resultBox');
+        const signalOut = document.getElementById('signalOutput');
+        resBox.style.display = 'block';
+        signalOut.innerText = 'ANALYZING...';
+        signalOut.className = 'signal-title';
+
+        try {
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: base64Image, mimeType: mimeType })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                alert("Error: " + data.error);
+                return;
+            }
+
+            document.getElementById('pairTitle').innerText = data.pair;
+            signalOut.innerText = data.signal;
+
+            if (data.signal.includes("CALL") || data.signal.includes("UP")) {
+                signalOut.className = "signal-title signal-up";
+            } else if (data.signal.includes("PUT") || data.signal.includes("DOWN")) {
+                signalOut.className = "signal-title signal-down";
+            } else {
+                signalOut.className = "signal-title signal-wait";
+            }
+
+            document.getElementById('confVal').innerText = data.confidence;
+            document.getElementById('reasonText').innerText = data.reasoning;
+
+        } catch (err) {
+            console.error(err);
+            alert("Server connection failed. Please check Vercel deployment.");
+        }
+    }
+</script>
+
+</body>
+  </html>
