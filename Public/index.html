@@ -3,157 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JUNU AI V2.0 PRO</title>
+    <title>JUNU AI V2.0 PRO - Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #060812;
-            --card-bg: #0f1326;
-            --accent-purple: #7000ff;
-            --accent-cyan: #00f0ff;
-            --green: #00e676;
-            --red: #ff1744;
-            --yellow: #ffc400;
-            --text-main: #ffffff;
-            --text-sub: #828b9e;
+            --bg-dark: #080b11;
+            --card-bg: #0f1522;
+            --border-color: #1e293b;
+            --neon-blue: #00f2fe;
+            --neon-green: #00e676;
+            --neon-red: #ff1744;
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg-main); color: var(--text-main); display: flex; justify-content: center; padding: 15px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 15px; overflow-x: hidden; }
+        
+        .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 15px; }
 
-        .app-container {
-            width: 100%; max-width: 420px; background: var(--card-bg);
-            border-radius: 20px; border: 1px solid rgba(112, 0, 255, 0.3);
-            padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        /* Welcome Popup Modal */
+        .welcome-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(8, 11, 17, 0.95); backdrop-filter: blur(10px);
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+        .welcome-card {
+            background: var(--card-bg); border: 1px solid var(--neon-blue); border-radius: 20px;
+            padding: 30px 20px; text-align: center; width: 85%; max-width: 360px;
+            box-shadow: 0 0 30px rgba(0,242,254,0.25); animation: zoomIn 0.5s ease-out;
+        }
+        .welcome-card h2 { font-family: 'Orbitron', sans-serif; font-size: 20px; color: var(--neon-blue); margin-bottom: 8px; }
+        .welcome-card p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+        .welcome-status { margin-top: 15px; font-size: 11px; font-weight: 700; color: var(--neon-green); text-transform: uppercase; letter-spacing: 1px; }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 {
-            font-size: 22px; font-weight: 900;
-            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
+        /* Header */
+        .header { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; background: linear-gradient(90deg, var(--neon-blue), #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .status-badge { font-size: 10px; background: rgba(0,230,118,0.1); color: var(--neon-green); border: 1px solid var(--neon-green); padding: 4px 10px; border-radius: 20px; font-weight: 700; }
 
-        .upload-box {
-            border: 2px dashed rgba(0, 240, 255, 0.4); border-radius: 14px;
-            padding: 20px; text-align: center; background: rgba(0,240,255,0.02);
-            cursor: pointer; margin-bottom: 15px;
-        }
-        .preview-img { max-width: 100%; max-height: 140px; border-radius: 8px; display: none; margin: 10px auto 0; }
+        /* Main Setup Card */
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 18px; }
+        
+        .upload-area { border: 2px dashed #334155; border-radius: 12px; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; background: #0b0f19; overflow: hidden; position: relative; }
+        .upload-area:hover { border-color: var(--neon-blue); }
+        .upload-icon { font-size: 36px; margin-bottom: 6px; color: var(--neon-blue); }
+        .upload-text { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+        #preview { width: 100%; height: 100%; object-fit: contain; display: none; border-radius: 10px; }
 
-        .btn-action {
-            width: 100%; padding: 14px; border: none; border-radius: 12px;
-            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
-            color: #fff; font-size: 15px; font-weight: 800; cursor: pointer;
-        }
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .input-group label { display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 4px; font-weight: 700; }
+        .input-group select, .input-group input { width: 100%; background: #0b0f19; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; outline: none; }
 
-        .result-box {
-            display: none; margin-top: 15px; background: #161b36;
-            border-radius: 14px; padding: 15px; border: 1px solid rgba(0,240,255,0.2);
-        }
-        .pair-title { font-size: 16px; font-weight: 800; margin-bottom: 8px; text-align: center; color: var(--accent-cyan); }
-        .signal-title { font-size: 22px; font-weight: 900; text-align: center; margin: 10px 0; }
-        .signal-up { color: var(--green); }
-        .signal-down { color: var(--red); }
-        .signal-wait { color: var(--yellow); }
+        .btn-analyze { width: 100%; margin-top: 15px; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(90deg, #00c6ff, #0072ff); color: white; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,198,255,0.3); }
+        .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 
-        .reason-box {
-            background: #090c1a; border-radius: 8px; padding: 10px;
-            font-size: 11px; line-height: 1.4; color: var(--text-sub); margin-top: 10px;
-        }
+        /* Result Panel */
+        .result-panel { display: none; flex-direction: column; gap: 12px; margin-top: 5px; }
+        .result-header { background: #0b0f19; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; text-align: center; }
+        .pair-title { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700; color: var(--neon-blue); }
+
+        .signal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .signal-box { background: #0b0f19; border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
+        .signal-title { font-size: 10px; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; }
+        .signal-val { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900; }
+        .signal-val.call { color: var(--neon-green); text-shadow: 0 0 10px rgba(0,230,118,0.4); }
+        .signal-val.put { color: var(--neon-red); text-shadow: 0 0 10px rgba(255,23,68,0.4); }
+
+        .metrics-box { background: #0b0f19; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; display: flex; justify-content: space-around; text-align: center; }
+        .metric-item { display: flex; flex-direction: column; }
+        .metric-label { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+        .metric-val { font-size: 13px; font-weight: 700; color: #fff; margin-top: 2px; }
+
+        .reasoning-card { background: #0b0f19; border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; font-size: 11px; color: #cbd5e1; line-height: 1.5; }
+        .error-card { display: none; background: rgba(255, 23, 68, 0.1); border: 1px solid var(--neon-red); color: var(--neon-red); padding: 15px; border-radius: 12px; font-size: 12px; text-align: center; font-weight: 600; line-height: 1.4; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <div class="header"><h1>JUNU AI V2.0 PRO</h1></div>
+<!-- Welcome Popup Overlay -->
+<div class="welcome-overlay" id="welcomeOverlay">
+    <div class="welcome-card">
+        <h2>JUNU AI V2.0 PRO</h2>
+        <p>Next-Candle Candlestick Engine & Deep Vision Terminal</p>
+        <div class="welcome-status">● SYSTEM INITIALIZED</div>
+    </div>
+</div>
 
-    <div class="upload-box" onclick="triggerFileInput()">
-        <span id="uploadText">📷 Upload Chart Screenshot</span>
-        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="previewImage(event)">
-        <img id="imgPreview" class="preview-img">
+<div class="container">
+    <!-- Top Header -->
+    <div class="header">
+        <div class="brand">JUNU AI V2.0 PRO</div>
+        <div class="status-badge">AI ACTIVE</div>
     </div>
 
-    <button class="btn-action" onclick="analyzeChart()">ANALYZE CHART</button>
-
-    <div id="resultBox" class="result-box">
-        <div class="pair-title" id="pairTitle">EUR/USD (OTC)</div>
-        <div class="signal-title" id="signalOutput">--</div>
-        <div style="font-size:12px; display:flex; justify-content:space-between; margin:10px 0;">
-            <span>Confidence Rate:</span><strong id="confVal" style="color:var(--accent-cyan);">0%</strong>
+    <!-- Upload Card -->
+    <div class="card">
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <div id="uploadPlaceholder" style="text-align: center;">
+                <div class="upload-icon">📊</div>
+                <div class="upload-text">Upload Quotex / PocketOption Chart</div>
+            </div>
+            <img id="preview" alt="Chart Preview">
         </div>
-        <div class="reason-box" id="reasonText">Scanning chart...</div>
+        <input type="file" id="fileInput" accept="image/*" onchange="handleImage(this)">
+
+        <div class="controls-grid">
+            <div class="input-group">
+                <label>TIMEFRAME</label>
+                <select id="timeframe">
+                    <option value="30s / 1M" selected>30s / 1M Turbo Next-Candle</option>
+                    <option value="5M">5M Reversal Trend</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>CAPITAL ($)</label>
+                <input type="number" id="balance" value="100">
+            </div>
+        </div>
+
+        <button class="btn-analyze" id="analyzeBtn" onclick="analyzeChart()" disabled>ANALYZE NEXT CANDLE</button>
+    </div>
+
+    <!-- Error Display -->
+    <div class="error-card" id="errorCard"></div>
+
+    <!-- Result Panel -->
+    <div class="result-panel" id="resultPanel">
+        <div class="result-header">
+            <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETECTED ASSET</div>
+            <div class="pair-title" id="pairVal">EUR/USD (OTC)</div>
+        </div>
+
+        <div class="signal-grid">
+            <div class="signal-box">
+                <div class="signal-title">ACCURACY</div>
+                <div class="signal-val" id="confVal" style="color: var(--neon-blue);">95%</div>
+            </div>
+            <div class="signal-box">
+                <div class="signal-title">NEXT CANDLE</div>
+                <div class="signal-val" id="signalText">CALL ▲</div>
+            </div>
+        </div>
+
+        <div class="metrics-box">
+            <div class="metric-item">
+                <span class="metric-label">Pattern</span>
+                <span class="metric-val" id="patternVal">Hammer Reversal</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Recommended Trade</span>
+                <span class="metric-val" id="tradeAmtVal" style="color: var(--neon-green);">$2.00</span>
+            </div>
+        </div>
+
+        <div class="reasoning-card" id="reasonVal">
+            AI Candle analysis breakdown will display here...
+        </div>
     </div>
 </div>
 
 <script>
-    let base64Image = null;
-    let mimeType = "image/png";
+    // Welcome Popup Auto Fade Out (2.5 Seconds)
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const overlay = document.getElementById('welcomeOverlay');
+            overlay.style.opacity = '0';
+            overlay.style.visibility = 'hidden';
+        }, 2500);
+    });
 
-    function triggerFileInput() {
-        document.getElementById('fileInput').click();
-    }
+    let base64Data = "";
+    let mimeType = "";
 
-    function previewImage(event) {
-        const file = event.target.files[0];
+    function handleImage(input) {
+        const file = input.files[0];
         if (file) {
             mimeType = file.type || "image/png";
             const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('imgPreview').src = e.target.result;
-                document.getElementById('imgPreview').style.display = 'block';
-                document.getElementById('uploadText').style.display = 'none';
-                base64Image = e.target.result.split(',')[1];
-            }
+            reader.onload = function (e) {
+                const img = document.getElementById('preview');
+                img.src = e.target.result;
+                img.style.display = 'block';
+                document.getElementById('uploadPlaceholder').style.display = 'none';
+                
+                base64Data = e.target.result.split(',')[1];
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('errorCard').style.display = 'none';
+            };
             reader.readAsDataURL(file);
         }
     }
 
     async function analyzeChart() {
-        if (!base64Image) {
-            alert("Doya kore chart-er screenshot upload korun!");
-            return;
-        }
+        const btn = document.getElementById('analyzeBtn');
+        const resultPanel = document.getElementById('resultPanel');
+        const errorCard = document.getElementById('errorCard');
+        const timeframe = document.getElementById('timeframe').value;
+        const balance = parseFloat(document.getElementById('balance').value) || 100;
 
-        const resBox = document.getElementById('resultBox');
-        const signalOut = document.getElementById('signalOutput');
-        resBox.style.display = 'block';
-        signalOut.innerText = 'ANALYZING...';
-        signalOut.className = 'signal-title';
+        if (!base64Data) return;
+
+        btn.disabled = true;
+        btn.innerText = "SCANNING CANDLESTICK DATA...";
+        resultPanel.style.display = 'none';
+        errorCard.style.display = 'none';
 
         try {
-            const response = await fetch('/api/analyze', {
+            const res = await fetch('/api/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: base64Image, mimeType: mimeType })
+                body: JSON.stringify({ image: base64Data, mimeType: mimeType, timeframe: timeframe })
             });
 
-            const data = await response.json();
+            const data = await res.json();
 
-            if (data.error) {
-                alert("Error: " + data.error);
-                return;
-            }
+            if (res.ok && data.isChart) {
+                resultPanel.style.display = 'flex';
+                
+                document.getElementById('pairVal').innerText = data.pair || "Binary Asset";
+                document.getElementById('confVal').innerText = data.confidence || "90%";
+                document.getElementById('patternVal').innerText = data.pattern || "Candle Setup";
+                document.getElementById('reasonVal').innerText = data.reasoning || "Technical structure analyzed.";
 
-            document.getElementById('pairTitle').innerText = data.pair;
-            signalOut.innerText = data.signal;
+                const tradeAmt = (balance * 0.02).toFixed(2);
+                document.getElementById('tradeAmtVal').innerText = "$" + tradeAmt;
 
-            if (data.signal.includes("CALL") || data.signal.includes("UP")) {
-                signalOut.className = "signal-title signal-up";
-            } else if (data.signal.includes("PUT") || data.signal.includes("DOWN")) {
-                signalOut.className = "signal-title signal-down";
+                const signalText = document.getElementById('signalText');
+                signalText.innerText = data.signal || "NEUTRAL";
+                signalText.className = "signal-val";
+
+                if (data.signal && data.signal.includes("CALL")) {
+                    signalText.classList.add("call");
+                } else if (data.signal && data.signal.includes("PUT")) {
+                    signalText.classList.add("put");
+                }
             } else {
-                signalOut.className = "signal-title signal-wait";
+                errorCard.style.display = 'block';
+                errorCard.innerText = "❌ " + (data.error || "INVALID CHART: Please upload a clear Quotex/PocketOption Candlestick chart.");
             }
-
-            document.getElementById('confVal').innerText = data.confidence;
-            document.getElementById('reasonText').innerText = data.reasoning;
-
         } catch (err) {
-            console.error(err);
-            alert("Server connection failed. Please check Vercel deployment.");
+            errorCard.style.display = 'block';
+            errorCard.innerText = "❌ Connection failed. Please check internet connection.";
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "ANALYZE NEXT CANDLE";
         }
     }
 </script>
 
 </body>
-  </html>
+</html>
